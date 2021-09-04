@@ -26,8 +26,8 @@ else
   S = function ( s ) return s end
 end
 
-local hud_default_x=0.4
-local hud_default_y=0.01
+local hud_default_x=0.5
+local hud_default_y=0.8
 local hud_default_color="FFFF00"
 local compass_default_type="c"
 local compass_valid_types={"a","b","c"}
@@ -824,7 +824,7 @@ function compassgps.teleport_bookmark(playername, bkmrkidx)
       compassgps.bookmark_name_string(textlist_bkmrks[playername][bkmrkidx])))
 	minetest.chat_send_player(playername, S("Teleporting to %s"):format(
       compassgps.bookmark_name_string(textlist_bkmrks[playername][bkmrkidx])))
-  player:setpos(textlist_bkmrks[playername][bkmrkidx])
+  player:set_pos(textlist_bkmrks[playername][bkmrkidx])
 end --teleport_bookmark
 
 
@@ -1013,52 +1013,53 @@ minetest.register_globalstep(function(dtime)
     local stackidx=0
     --first check to see if the user has a compass, because if they don't
     --there is no reason to waste time calculating bookmarks or spawnpoints.
-		local wielded_item = player:get_wielded_item():get_name()
-		if string.sub(wielded_item, 0, 11) == "compassgps:" and string.sub(wielded_item, 0, 18) ~= "compassgps:cgpsmap" then
-      --if the player is wielding a compass, change the wielded image
-      wielded=true
-      stackidx=player:get_wield_index()
-      gotacompass=true
-		else
-      --check to see if compass is in active inventory
-      if player:get_inventory() then
-        --is there a way to only check the activewidth items instead of entire list?
-        --problem being that arrays are not sorted in lua
-        for i,stack in ipairs(player:get_inventory():get_list("main")) do
-          if i<=activewidth and string.sub(stack:get_name(), 0, 11) == "compassgps:" and string.sub(stack:get_name(),0,18) ~= "compassgps:cgpsmap" then
-            activeinv=stack  --store the stack so we can update it later with new image
-            stackidx=i --store the index so we can add image at correct location
-            gotacompass=true
-            break
-          end --if i<=activewidth
-        end --for loop
-      end -- get_inventory
+    local wielded_item = player:get_wielded_item():get_name()
+    if string.sub(wielded_item, 0, 11) == "compassgps:" and string.sub(wielded_item, 0, 18) ~= "compassgps:cgpsmap" then
+        --if the player is wielding a compass, change the wielded image
+        wielded=true
+        stackidx=player:get_wield_index()
+        gotacompass=true
+    else
+        --check to see if compass is in active inventory
+        if player:get_inventory() then
+            --is there a way to only check the activewidth items instead of entire list?
+            --problem being that arrays are not sorted in lua
+            for i,stack in ipairs(player:get_inventory():get_list("main")) do
+              if i<=activewidth and string.sub(stack:get_name(), 0, 11) == "compassgps:" and string.sub(stack:get_name(),0,18) ~= "compassgps:cgpsmap" then
+                activeinv=stack  --store the stack so we can update it later with new image
+                stackidx=i --store the index so we can add image at correct location
+                gotacompass=true
+                break
+              end --if i<=activewidth
+            end --for loop
+        end -- get_inventory
     end --if wielded else
 
 
     --dont mess with the rest of this if they don't have a compass
     if gotacompass then
-      --if they don't have a bookmark set, use the default
-      point_to[playername]=point_to[playername] or compassgps.get_default_bookmark(playername,1)
-      target=point_to[playername] --just to take up less space
-      pos = player:getpos()
-      dir = player:get_look_horizontal()
-      local angle_north = math.deg(math.atan2(target.x - pos.x, target.z - pos.z))
-      if angle_north < 0 then angle_north = angle_north + 360 end
-      local angle_dir = 90 - math.deg(dir)
-      local angle_relative = (angle_north - angle_dir) % 360
-      local compass_image = math.floor((angle_relative/30) + 0.5)%12
+        --if they don't have a bookmark set, use the default
+        point_to[playername]=point_to[playername] or compassgps.get_default_bookmark(playername,1)
+        target=point_to[playername] --just to take up less space
+        pos = player:getpos()
+        dir = player:get_look_horizontal()
+
+        local angle_north = math.deg(math.atan2(target.x - pos.x, target.z - pos.z))
+        if angle_north < 0 then angle_north = angle_north + 360 end
+        local angle_dir = -math.deg(dir)
+        local angle_relative = (angle_north - angle_dir) % 360
+        local compass_image = math.floor((angle_relative/30) + 0.5)%12
 
 
-      --update compass image to point at target
-      if wielded then
-        player:set_wielded_item("compassgps:"..
-            compassgps.compass_type_name(playername,compass_image))
-      elseif activeinv then
-        --player:get_inventory():remove_item("main", activeinv:get_name())
-        player:get_inventory():set_stack("main",stackidx,"compassgps:"..
-            compassgps.compass_type_name(playername,compass_image))
-      end --if wielded elsif activin
+        --update compass image to point at target
+        if wielded then
+            player:set_wielded_item("compassgps:"..
+                compassgps.compass_type_name(playername,compass_image))
+        elseif activeinv then
+            --player:get_inventory():remove_item("main", activeinv:get_name())
+            player:get_inventory():set_stack("main",stackidx,"compassgps:"..
+                compassgps.compass_type_name(playername,compass_image))
+        end --if wielded elsif activin
 
 
       --update the hud with playerpos -> target pos : distance to target
