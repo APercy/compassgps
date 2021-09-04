@@ -30,7 +30,7 @@ local hud_default_x=0.5
 local hud_default_y=0.8
 local hud_default_color="FFFF00"
 local compass_default_type="c"
-local compass_valid_types={"a","b","c"}
+local compass_valid_types={"a","b","c", "d"}
 local activewidth=8 --until I can find some way to get it from minetest
 local max_shared=10 --how many shared bookmarks a user with shared_bookmarks priv can make.
 local show_shared_on_singleplayer=false --show shared and admin checkboxes on singleplayer
@@ -563,6 +563,8 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
       compass_type[playername]="b"
     elseif fields["compass_type_c"] then
       compass_type[playername]="c"
+    elseif fields["compass_type_d"] then
+      compass_type[playername]="d"
     end --if fields["hud_pos"]
   elseif (playername ~= "" and formname == "compassgps:confirm_remove") then
     if fields["confirm_remove_yes"] then
@@ -1047,8 +1049,18 @@ minetest.register_globalstep(function(dtime)
         local angle_north = math.deg(math.atan2(target.x - pos.x, target.z - pos.z))
         if angle_north < 0 then angle_north = angle_north + 360 end
         local angle_dir = -math.deg(dir)
+
+        local divisions = 12
+        local angle_interval = 30
+        local ctype = compass_type[playername]
+        if ctype == "d" then -- for use of more frames
+            angle_interval = 11.25
+            divisions = 32
+        end
+
         local angle_relative = (angle_north - angle_dir) % 360
-        local compass_image = math.floor((angle_relative/30) + 0.5)%12
+        local compass_image = math.floor((angle_relative/angle_interval) + 0.5)%divisions
+        --minetest.chat_send_all(compass_image)
 
 
         --update compass image to point at target
@@ -1087,7 +1099,7 @@ minetest.register_globalstep(function(dtime)
 
       local compasstype=compass_default_type
       if compass_type[playername] and
-         (compass_type[playername]=="a" or compass_type[playername]=="b" or compass_type[playername]=="c") then
+         (compass_type[playername]=="a" or compass_type[playername]=="b" or compass_type[playername]=="c" or compass_type[playername]=="d") then
         compasstype=compass_type[playername]
       else
         compass_type[playername]=compass_default_type
@@ -1274,7 +1286,8 @@ function compassgps.get_settings_formspec(name)
     "label[1,1.5;"..S("Compass Type:").."]"..
     "image_button[3,1.5;1,1;compass_0.png;compass_type_a;]"..
     "image_button[4,1.5;1,1;compass_b0.png;compass_type_b;]"..
-    "image_button[5,1.5;1,1;compass_c0.png;compass_type_c;]"
+    "image_button[5,1.5;1,1;compass_c0.png;compass_type_c;]" ..
+    "image_button[6,1.5;1,1;compass_d0.png;compass_type_d;]"
 
 end --get_compassgps_formspec
 
@@ -1285,7 +1298,7 @@ end --get_compassgps_formspec
 
 local i
 --for i,img in ipairs(images) do
-for i=1,12 do
+for i=1,32 do
   for c,ctype in pairs(compass_valid_types) do
     local inv = 1
     if i == 1 and ctype=="a" then
