@@ -642,7 +642,26 @@ function compassgps.clean_string(str)
   return str
 end --clean_string
 
+local function locate( table, value )
+    for i = 1, #table do
+        if table[i] == value then return true end
+    end
+    return false
+end
 
+local function check_is_inside_forbiden_area(pos)
+    local table = {"fbd"}
+    if areas then
+        local areasAtPos = areas:getAreasAtPos(pos)
+        for id, area in pairs(areasAtPos) do
+            --minetest.chat_send_all(dump(area.name))
+            if locate( table, area.name ) then
+                return true
+            end
+        end
+    end
+    return false
+end
 
 function compassgps.set_bookmark(playername, bkmrkname, type, predefinedpos)
 	local player = minetest.get_player_by_name(playername)
@@ -651,6 +670,10 @@ function compassgps.set_bookmark(playername, bkmrkname, type, predefinedpos)
 	end
 
 	local pos = player:getpos()
+
+    local is_forbiden = check_is_inside_forbiden_area(pos)
+    if minetest.check_player_privs(player, {protection_bypass=true}) then is_forbiden = false end
+
 	if predefinedpos ~= nil then
 		pos = predefinedpos
 	end
@@ -664,6 +687,7 @@ function compassgps.set_bookmark(playername, bkmrkname, type, predefinedpos)
 		return
 	end
 	if bkmrkname == "default" or bkmrkname == "bed" or bkmrkname == "sethome"
+       or is_forbiden == true
        or string.sub(bkmrkname,1,8) == "*shared*"
        or string.sub(bkmrkname,1,7)=="*admin*" then
 		minetest.chat_send_player(playername, S("A bookmark with the name '%s' can't be created."):format(bkmrkname))
