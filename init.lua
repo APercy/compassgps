@@ -362,7 +362,7 @@ function compassgps.bookmark_loop(mode,playername,findidx)
         --minetest.chat_send_player(playername, vbkmrkname..": "..compassgps.pos_to_string(v))
         minetest.chat_send_player(playername, compassgps.bookmark_name_pos_dist(v,playername,playerpos))
       end
-		end --if vtype
+	end --if vtype
 
     --print("bookmark_loop mode="..mode.." bkmrkidx="..bkmrkidx.." vbkmkrname="..vbkmrkname.." point_to="..point_to[playername].bkmrkname.." vplayer="..vplayer.." point_to="..point_to[playername].player)
 	  --set testlist_clicked to the currently selected item in the list
@@ -454,22 +454,38 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
     --this leaves open the possibility of someone typing in the hudx or hudy
     --field and hitting enter after typing in the bookmark field.  Not likely
 		if (fields["new_bookmark"] and fields["bookmark"]) --hit the bookmark button
-      or ( (fields["bookmark"]) and (fields["bookmark"]~="")   --bookmark field not blank
-          and (not fields["remove_bookmark"]) and (not fields["find_bookmark"])
-          and (not fields["bookmark_list"]) and (not fields["sort_type"])
-          and (not fields["distance_type"]) and (not fields["settings"])
-          and (not fields["teleport"]) and (not fields["show_private"])
-          and (not fields["show_shared"]) and (not fields["show_admin"])
+          or ( (fields["bookmark"]) and (fields["bookmark"]~="")   --bookmark field not blank
+              and (not fields["remove_bookmark"]) and (not fields["find_bookmark"])
+              and (not fields["bookmark_list"]) and (not fields["sort_type"])
+              and (not fields["distance_type"]) and (not fields["settings"])
+              and (not fields["teleport"]) and (not fields["show_private"])
+              and (not fields["show_shared"]) and (not fields["show_admin"])
           )
       then
-      local type="P"
-      if fields["new_shared_bookmark"] then
-        type="S"
-      elseif fields["new_admin_bookmark"] then
-        type="A"
-      end --shared or admin
-			compassgps.set_bookmark(playername, fields["bookmark"],type)
-  	  minetest.show_formspec(playername, compassgps.get_compassgps_formspec(playername))
+          local type="P"
+          if fields["new_shared_bookmark"] then
+            type="S"
+          elseif fields["new_admin_bookmark"] then
+            type="A"
+          end --shared or admin
+          
+          --lets limmit to 5 for normal users
+          if type=="P" and not minetest.check_player_privs(player, {protection_bypass=true}) then
+            local c=0
+            for k,v in pairs(bookmarks) do
+                if v.player and v.player==playername and v.type and v.type=="P" then
+                  c=c+1
+                end --if
+            end --for
+            local limit = 5
+            if c >= limit then
+                minetest.chat_send_player(playername,S("You have reached the limit of " .. tostring(limit) .." bookmarks. Delete some records to be able to add a new one"))
+                return
+            end
+          end
+
+          compassgps.set_bookmark(playername, fields["bookmark"],type)
+          minetest.show_formspec(playername, compassgps.get_compassgps_formspec(playername))
     elseif fields["remove_bookmark"] and textlist_clicked[playername] then
       local bkmrkidx=textlist_clicked[playername]
       if textlist_bkmrks[playername][bkmrkidx].player ~= playername then
