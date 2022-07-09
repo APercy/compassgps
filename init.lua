@@ -1228,6 +1228,7 @@ end--spairs
 
 function compassgps.get_compassgps_formspec(name)
   local player = minetest.get_player_by_name(name)
+  if not player then return end
   local playerpos = player:getpos()
   --print("get_compassgps_formspec spawn="..compassgps.pos_to_string(store_spawn[name]))
   --local list = "default "..compassgps.pos_to_string(compassgps.get_default_pos_and_name(name))
