@@ -86,16 +86,17 @@ end
 --"main" block or will be nil
 
 function compassgps.sort_by_distance(table,a,b,player)
-  --print("sort_by_distance a="..compassgps.pos_to_string(table[a]).." b="..pos_to_string(table[b]))
-  local playerpos = player:getpos()
-  local name=player:get_player_name()
-  --return compassgps.distance3d(playerpos,table[a]) < compassgps.distance3d(playerpos,table[b])
-  if distance_function[name] then
-    return distance_function[name](playerpos,table[a]) <
-           distance_function[name](playerpos,table[b])
-  else
-    return false  --this should NEVER happen
-  end
+    if not player then return false end
+    --print("sort_by_distance a="..compassgps.pos_to_string(table[a]).." b="..pos_to_string(table[b]))
+    local playerpos = player:getpos()
+    local name=player:get_player_name()
+    --return compassgps.distance3d(playerpos,table[a]) < compassgps.distance3d(playerpos,table[b])
+    if distance_function[name] then
+        return distance_function[name](playerpos,table[a]) <
+               distance_function[name](playerpos,table[b])
+    else
+        return false  --this should NEVER happen
+    end
 end --sort_by_distance
 
 function compassgps.sort_by_name(table,a,b,player)
